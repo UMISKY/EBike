@@ -209,7 +209,7 @@
 
 	<script src="index.js"></script>
 	<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":58604164,"index.wasm":39514754},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":58608244,"index.wasm":39514754},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const engine = new Engine(GODOT_CONFIG);
 
 (function () {
@@ -258,17 +258,32 @@ const engine = new Engine(GODOT_CONFIG);
 
 		setStatusMode('progress');
 
-		if (!engine.isWebGLAvailable()) {
-			displayFailureNotice('当前浏览器或环境不支持 WebGL');
-			return;
+		try {
+			if (typeof Engine.getMissingFeatures === 'function') {
+				const missing = Engine.getMissingFeatures();
+				if (missing.length > 0) {
+					displayFailureNotice('当前浏览器缺少 Web 运行所需特性:\n' + missing.join('\n'));
+					return;
+				}
+			} else if (typeof Engine.isWebGLAvailable === 'function') {
+				if (!Engine.isWebGLAvailable()) {
+					displayFailureNotice('当前浏览器或环境不支持 WebGL');
+					return;
+				}
+			}
+		} catch (e) {
+			console.warn("环境预检跳过:", e);
 		}
 
-		// 此时才正式发起网络请求下载 .wasm 和 .pck
+		// 此时才正式发起网络请求下载 .wasm 和 .pck 核心资源包
 		engine.startGame({
 			'onProgress': function (current, total) {
 				if (total > 0) {
-					statusProgressInner.style.width = `${(current / total) * 100}%`;
+					const pct = Math.floor((current / total) * 100);
+					statusProgressInner.style.width = `${pct}%`;
+					statusNotice.innerText = `正在加载资源 (${pct}%)...`;
 					if (current === total) {
+						statusNotice.innerText = "正在启动游戏引擎...";
 						setTimeout(() => {
 							setStatusMode('hidden');
 						}, 300);
