@@ -1,220 +1,330 @@
 <!DOCTYPE html>
-<html lang="en">
-	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
-		<title>Urban E-Bike Runner</title>
-		<style>
-html, body, #canvas {
-	margin: 0;
-	padding: 0;
-	border: 0;
-}
+<html lang="zh-CN">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+	<title>Urban E-Bike Runner</title>
+	<style>
+		body {
+			touch-action: none;
+			margin: 0;
+			border: 0 none;
+			padding: 0;
+			text-align: center;
+			background-color: #0b0c10;
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+			overflow: hidden;
+		}
 
-body {
-	color: white;
-	background-color: black;
-	overflow: hidden;
-	touch-action: none;
-}
+		#canvas {
+			display: block;
+			margin: 0;
+			color: white;
+			width: 100vw;
+			height: 100vh;
+			touch-action: none;
+			-webkit-touch-callout: none;
+			-webkit-user-select: none;
+			user-select: none;
+		}
 
-#canvas {
-	display: block;
-}
+		#canvas:focus {
+			outline: none;
+		}
 
-#canvas:focus {
-	outline: none;
-}
+		/* 加载状态与进度条 */
+		#status {
+			position: absolute;
+			left: 0;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			background-color: #0b0c10;
+			z-index: 10;
+			visibility: hidden;
+		}
 
-#status, #status-splash, #status-progress {
-	position: absolute;
-	left: 0;
-	right: 0;
-}
+		#status-progress {
+			width: 320px;
+			max-width: 80%;
+			height: 8px;
+			background-color: #1f2833;
+			border: 1px solid #45a29e;
+			padding: 2px;
+			border-radius: 6px;
+			visibility: visible;
+			box-shadow: 0 0 12px rgba(69, 162, 158, 0.3);
+		}
 
-#status, #status-splash {
-	top: 0;
-	bottom: 0;
-}
+		#status-progress-inner {
+			height: 100%;
+			width: 0;
+			box-sizing: border-box;
+			transition: width 0.3s ease-out;
+			background: linear-gradient(90deg, #45a29e, #66fcf1);
+			border-radius: 4px;
+		}
 
-#status {
-	background-color: #242424;
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	align-items: center;
-	visibility: hidden;
-}
+		#status-notice {
+			margin-top: 16px;
+			color: #c5c6c7;
+			font-size: 14px;
+			visibility: visible;
+		}
 
-#status-splash {
-	max-height: 100%;
-	max-width: 100%;
-	margin: auto;
-}
+		/* 密码验证门禁层 */
+		#auth-gate {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100vw;
+			height: 100vh;
+			background: radial-gradient(circle at center, #1f2833 0%, #0b0c10 100%);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			z-index: 9999;
+			transition: opacity 0.4s ease, visibility 0.4s ease;
+		}
 
-#status-splash.show-image--false {
-	display: none;
-}
+		.auth-card {
+			background: rgba(31, 40, 51, 0.85);
+			border: 1px solid rgba(102, 252, 241, 0.35);
+			box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6), 0 0 16px rgba(102, 252, 241, 0.2);
+			backdrop-filter: blur(12px);
+			-webkit-backdrop-filter: blur(12px);
+			border-radius: 16px;
+			padding: 36px 32px;
+			width: 360px;
+			max-width: 88%;
+			text-align: center;
+			box-sizing: border-box;
+		}
 
-#status-splash.fullsize--true {
-	height: 100%;
-	width: 100%;
-	object-fit: contain;
-}
+		.auth-title {
+			color: #66fcf1;
+			font-size: 22px;
+			font-weight: 700;
+			margin-bottom: 8px;
+			letter-spacing: 1px;
+		}
 
-#status-splash.use-filter--false {
-	image-rendering: pixelated;
-}
+		.auth-desc {
+			color: #c5c6c7;
+			font-size: 13px;
+			margin-bottom: 24px;
+			line-height: 1.5;
+		}
 
-#status-progress, #status-notice {
-	display: none;
-}
+		.auth-input {
+			width: 100%;
+			box-sizing: border-box;
+			padding: 12px 16px;
+			font-size: 16px;
+			color: #ffffff;
+			background: #0b0c10;
+			border: 1px solid #45a29e;
+			border-radius: 8px;
+			outline: none;
+			transition: border-color 0.2s, box-shadow 0.2s;
+			text-align: center;
+			letter-spacing: 2px;
+		}
 
-#status-progress {
-	bottom: 10%;
-	width: 50%;
-	margin: 0 auto;
-}
+		.auth-input:focus {
+			border-color: #66fcf1;
+			box-shadow: 0 0 10px rgba(102, 252, 241, 0.4);
+		}
 
-#status-notice {
-	background-color: #5b3943;
-	border-radius: 0.5rem;
-	border: 1px solid #9b3943;
-	color: #e0e0e0;
-	font-family: 'Noto Sans', 'Droid Sans', Arial, sans-serif;
-	line-height: 1.3;
-	margin: 0 2rem;
-	overflow: hidden;
-	padding: 1rem;
-	text-align: center;
-	z-index: 1;
-}
-		</style>
-		<link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
+		.auth-btn {
+			width: 100%;
+			margin-top: 18px;
+			padding: 12px 0;
+			font-size: 16px;
+			font-weight: 600;
+			color: #0b0c10;
+			background: linear-gradient(90deg, #45a29e, #66fcf1);
+			border: none;
+			border-radius: 8px;
+			cursor: pointer;
+			transition: transform 0.15s, box-shadow 0.2s;
+		}
+
+		.auth-btn:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 4px 14px rgba(102, 252, 241, 0.45);
+		}
+
+		.auth-btn:active {
+			transform: translateY(0);
+		}
+
+		.auth-error {
+			margin-top: 12px;
+			color: #ff6b6b;
+			font-size: 13px;
+			height: 18px;
+			opacity: 0;
+			transition: opacity 0.2s;
+		}
+
+		.shake {
+			animation: shakeAnim 0.35s ease-in-out;
+		}
+
+		@keyframes shakeAnim {
+			0%, 100% { transform: translateX(0); }
+			20%, 60% { transform: translateX(-8px); }
+			40%, 80% { transform: translateX(8px); }
+		}
+	</style>
+	<link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
 <link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
 
-	</head>
-	<body>
-		<canvas id="canvas">
-			Your browser does not support the canvas tag.
-		</canvas>
-
-		<noscript>
-			Your browser does not support JavaScript.
-		</noscript>
-
-		<div id="status">
-			<img id="status-splash" class="show-image--true fullsize--true use-filter--true" src="index.png" alt="">
-			<progress id="status-progress"></progress>
-			<div id="status-notice"></div>
+</head>
+<body>
+	<!-- 密码鉴权门禁层 (默认阻断任何下载与渲染) -->
+	<div id="auth-gate">
+		<div class="auth-card" id="auth-card">
+			<div class="auth-title">🛵 Urban E-Bike</div>
+			<div class="auth-desc">内部受限测试版本<br>请输入暗号解锁游玩权限</div>
+			<input type="password" id="passcode-input" class="auth-input" placeholder="输入测试暗号..." autocomplete="off">
+			<button id="auth-submit-btn" class="auth-btn">验证并启动</button>
+			<div id="auth-error-msg" class="auth-error">暗号错误，请重新输入</div>
 		</div>
+	</div>
 
-		<script src="index.js"></script>
-		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":58601044,"index.wasm":39514754},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
-const GODOT_THREADS_ENABLED = false;
+	<canvas id="canvas">
+		您的浏览器不支持 HTML5 Canvas，请升级浏览器后体验。
+	</canvas>
+
+	<div id="status">
+		<div id="status-progress" oncontextmenu="event.preventDefault();"><div id="status-progress-inner"></div></div>
+		<div id="status-notice">正在加载电驴城市场景资源...</div>
+	</div>
+
+	<script src="index.js"></script>
+	<script>
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":58604164,"index.wasm":39514754},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const engine = new Engine(GODOT_CONFIG);
 
 (function () {
+	const REQUIRED_PASSCODE = "duckpire"; // 目标暗号
+	const AUTH_STORAGE_KEY = "ebike_runner_auth_v1";
+
+	const authGate = document.getElementById('auth-gate');
+	const authCard = document.getElementById('auth-card');
+	const passInput = document.getElementById('passcode-input');
+	const passBtn = document.getElementById('auth-submit-btn');
+	const errorMsg = document.getElementById('auth-error-msg');
+
 	const statusOverlay = document.getElementById('status');
 	const statusProgress = document.getElementById('status-progress');
+	const statusProgressInner = document.getElementById('status-progress-inner');
 	const statusNotice = document.getElementById('status-notice');
 
-	let initializing = true;
-	let statusMode = '';
+	let isGameStarted = false;
 
 	function setStatusMode(mode) {
-		if (statusMode === mode || !initializing) {
-			return;
-		}
 		if (mode === 'hidden') {
-			statusOverlay.remove();
-			initializing = false;
-			return;
+			statusOverlay.style.visibility = 'hidden';
+		} else {
+			statusOverlay.style.visibility = 'visible';
 		}
-		statusOverlay.style.visibility = 'visible';
-		statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
-		statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
-		statusMode = mode;
-	}
-
-	function setStatusNotice(text) {
-		while (statusNotice.lastChild) {
-			statusNotice.removeChild(statusNotice.lastChild);
-		}
-		const lines = text.split('\n');
-		lines.forEach((line) => {
-			statusNotice.appendChild(document.createTextNode(line));
-			statusNotice.appendChild(document.createElement('br'));
-		});
 	}
 
 	function displayFailureNotice(err) {
-		console.error(err);
-		if (err instanceof Error) {
-			setStatusNotice(err.message);
-		} else if (typeof err === 'string') {
-			setStatusNotice(err);
-		} else {
-			setStatusNotice('An unknown error occurred.');
-		}
+		const msg = err.message || err;
+		console.error("Godot 加载失败:", msg);
+		statusNotice.innerText = "加载失败: " + msg;
+		statusNotice.style.color = "#ff6b6b";
 		setStatusMode('notice');
-		initializing = false;
 	}
 
-	const missing = Engine.getMissingFeatures({
-		threads: GODOT_THREADS_ENABLED,
-	});
+	// 核心启动函数：只有在暗号校验通过后才会触发执行！
+	function startGodot() {
+		if (isGameStarted) return;
+		isGameStarted = true;
 
-	if (missing.length !== 0) {
-		if (GODOT_CONFIG['serviceWorker'] && GODOT_CONFIG['ensureCrossOriginIsolationHeaders'] && 'serviceWorker' in navigator) {
-			let serviceWorkerRegistrationPromise;
-			try {
-				serviceWorkerRegistrationPromise = navigator.serviceWorker.getRegistration();
-			} catch (err) {
-				serviceWorkerRegistrationPromise = Promise.reject(new Error('Service worker registration failed.'));
-			}
-			// There's a chance that installing the service worker would fix the issue
-			Promise.race([
-				serviceWorkerRegistrationPromise.then((registration) => {
-					if (registration != null) {
-						return Promise.reject(new Error('Service worker already exists.'));
-					}
-					return registration;
-				}).then(() => engine.installServiceWorker()),
-				// For some reason, `getRegistration()` can stall
-				new Promise((resolve) => {
-					setTimeout(() => resolve(), 2000);
-				}),
-			]).then(() => {
-				// Reload if there was no error.
-				window.location.reload();
-			}).catch((err) => {
-				console.error('Error while registering service worker:', err);
-			});
-		} else {
-			// Display the message as usual
-			const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
-			displayFailureNotice(missingMsg + missing.join('\n'));
-		}
-	} else {
+		// 平滑淡出密码层
+		authGate.style.opacity = '0';
+		setTimeout(() => {
+			authGate.style.visibility = 'hidden';
+		}, 400);
+
 		setStatusMode('progress');
+
+		if (!engine.isWebGLAvailable()) {
+			displayFailureNotice('当前浏览器或环境不支持 WebGL');
+			return;
+		}
+
+		// 此时才正式发起网络请求下载 .wasm 和 .pck
 		engine.startGame({
 			'onProgress': function (current, total) {
-				if (current > 0 && total > 0) {
-					statusProgress.value = current;
-					statusProgress.max = total;
-				} else {
-					statusProgress.removeAttribute('value');
-					statusProgress.removeAttribute('max');
+				if (total > 0) {
+					statusProgressInner.style.width = `${(current / total) * 100}%`;
+					if (current === total) {
+						setTimeout(() => {
+							setStatusMode('hidden');
+						}, 300);
+					}
 				}
 			},
 		}).then(() => {
 			setStatusMode('hidden');
 		}, displayFailureNotice);
 	}
+
+	// 密码校验逻辑
+	function checkPasscode() {
+		const entered = passInput.value.trim().toLowerCase();
+		if (entered === REQUIRED_PASSCODE.toLowerCase()) {
+			sessionStorage.setItem(AUTH_STORAGE_KEY, "true");
+			errorMsg.style.opacity = '0';
+			startGodot();
+		} else {
+			errorMsg.style.opacity = '1';
+			authCard.classList.remove('shake');
+			void authCard.offsetWidth; // 触发 reflow
+			authCard.classList.add('shake');
+			passInput.value = '';
+			passInput.focus();
+		}
+	}
+
+	passBtn.addEventListener('click', checkPasscode);
+	passInput.addEventListener('keydown', (e) => {
+		if (e.key === 'Enter') {
+			checkPasscode();
+		}
+	});
+
+	// 阻止 iOS Safari 与 Android 浏览器手势导航（边缘滑动前进/后退、缩放、橡皮筋下拉）干扰画布滑动
+	const canvasElem = document.getElementById('canvas');
+	window.addEventListener('touchmove', function (e) {
+		if (e.target === canvasElem || (e.target && e.target.tagName === 'CANVAS')) {
+			e.preventDefault();
+		}
+	}, { passive: false });
+
+	document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
+	document.addEventListener('gesturechange', function (e) { e.preventDefault(); }, { passive: false });
+	document.addEventListener('gestureend', function (e) { e.preventDefault(); }, { passive: false });
+
+	// 如果本会话中已经输入过密码，支持直接免密启动
+	if (sessionStorage.getItem(AUTH_STORAGE_KEY) === "true") {
+		startGodot();
+	} else {
+		passInput.focus();
+	}
 }());
-		</script>
-	</body>
+	</script>
+</body>
 </html>
+
 
