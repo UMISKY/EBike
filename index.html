@@ -258,23 +258,6 @@ const engine = new Engine(GODOT_CONFIG);
 
 		setStatusMode('progress');
 
-		try {
-			if (typeof Engine.getMissingFeatures === 'function') {
-				const missing = Engine.getMissingFeatures();
-				if (missing.length > 0) {
-					displayFailureNotice('当前浏览器缺少 Web 运行所需特性:\n' + missing.join('\n'));
-					return;
-				}
-			} else if (typeof Engine.isWebGLAvailable === 'function') {
-				if (!Engine.isWebGLAvailable()) {
-					displayFailureNotice('当前浏览器或环境不支持 WebGL');
-					return;
-				}
-			}
-		} catch (e) {
-			console.warn("环境预检跳过:", e);
-		}
-
 		// 此时才正式发起网络请求下载 .wasm 和 .pck 核心资源包
 		engine.startGame({
 			'onProgress': function (current, total) {
