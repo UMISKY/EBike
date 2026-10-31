@@ -39,13 +39,12 @@
 			top: 0;
 			right: 0;
 			bottom: 0;
-			display: flex;
+			display: none;
 			flex-direction: column;
 			justify-content: center;
 			align-items: center;
 			background-color: #0b0c10;
 			z-index: 10;
-			visibility: hidden;
 		}
 
 		#status-progress {
@@ -56,7 +55,6 @@
 			border: 1px solid #45a29e;
 			padding: 2px;
 			border-radius: 6px;
-			visibility: visible;
 			box-shadow: 0 0 12px rgba(69, 162, 158, 0.3);
 		}
 
@@ -73,7 +71,6 @@
 			margin-top: 16px;
 			color: #c5c6c7;
 			font-size: 14px;
-			visibility: visible;
 		}
 
 		/* 密码验证门禁层 */
@@ -209,7 +206,7 @@
 
 	<script src="index.js"></script>
 	<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":58608244,"index.wasm":39514754},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":58608164,"index.wasm":39514754},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const engine = new Engine(GODOT_CONFIG);
 
 (function () {
@@ -231,8 +228,13 @@ const engine = new Engine(GODOT_CONFIG);
 
 	function setStatusMode(mode) {
 		if (mode === 'hidden') {
+			statusOverlay.style.display = 'none';
 			statusOverlay.style.visibility = 'hidden';
+			if (statusOverlay && statusOverlay.parentNode) {
+				statusOverlay.remove();
+			}
 		} else {
+			statusOverlay.style.display = 'flex';
 			statusOverlay.style.visibility = 'visible';
 		}
 	}
